@@ -1,9 +1,13 @@
 <?php
+
+session_start();
+
 header("Access-Control-Allow-Origin: http://localhost:3000");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: GET");
 header("Access-Control-Max-Age: 3600");
 header("Access-Control-Allow-Headers: Content-Type, Access-Control-Allow-Headers, Authorization, X-Requested-With");
+header("Access-Control-Allow-Credentials: true");
 
 // Database connection information
 $servername = "localhost";
@@ -19,14 +23,21 @@ if ($conn->connect_error) {
     die(json_encode(array("message" => "Connection failed: " . $conn->connect_error)));
 }
 
-$_GET['user_id'] = 1;
-// Get user_id from query parameter
+// Check if the user is logged in
+if (!isset($_SESSION['user_id'])) {
+    echo json_encode(array("message" => "User not logged in"));
+    exit;
+}
+
+$user_id = $_SESSION['user_id'];
+
+/*// Get user_id from query parameter
 $user_id = isset($_GET['user_id']) ? intval($_GET['user_id']) : 0;
 
 if ($user_id === 0) {
     echo json_encode(array("message" => "No user ID provided"));
     exit;
-}
+}*/
 
 // Prepare SQL to get orders
 $orders_query = "SELECT id, total_amount, order_date FROM orders WHERE user_id = ? ORDER BY order_date DESC";

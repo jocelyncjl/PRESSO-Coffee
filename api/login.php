@@ -1,6 +1,9 @@
 <?php
+session_start();
+
 // Setting up to allow cross-domain requests
-header("Access-Control-Allow-Origin: *");
+header("Access-Control-Allow-Origin: http://localhost:3000");
+header("Access-Control-Allow-Credentials: true");
 header("Content-Type: application/json; charset=UTF-8");
 header("Access-Control-Allow-Methods: POST");
 header("Access-Control-Max-Age: 3600");
@@ -38,14 +41,12 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 
 // Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+    die(json_encode(array("data" => null, "message" => "Connection failed: " . $conn->connect_error)));
 }
-echo "Database connection successful";
 
 // Obtain post data
 $data = json_decode(file_get_contents("php://input"));
 
-var_dump($data);
 // Check if the username and password were received
 if (!empty($data->username) && !empty($data->password)) {
     $username = $conn->real_escape_string($data->username);
@@ -57,33 +58,36 @@ if (!empty($data->username) && !empty($data->password)) {
     if ($result->num_rows > 0) {
         $row = $result->fetch_assoc();
         if (password_verify($password, $row['password'])) {
+            $_SESSION['user_id'] = $row['id'];
             // Successful login
             http_response_code(200);
             echo json_encode(array(
-                "message" => "Sign in successful",
-                "user" => array(
-                    "id" => $row['id'],
-                    "name" => $row['name'],
-                    "email" => $row['email'],
-                    "age" => $row['age'],
-                    "phone" => $row['phone'],
-                    "address" => $row['address']
-                )
+                "data" => array(
+                    "user" => array(
+                        "id" => $row['id'],
+                        "name" => $row['name'],
+                        "email" => $row['email'],
+                        "age" => $row['age'],
+                        "phone" => $row['phone'],
+                        "address" => $row['address']
+                    )
+                ),
+                "message" => "Sign in successful"
             ));
         }else{
             // Wrong password
             http_response_code(401);
-            echo json_encode(array("message" => "Invalid password"));
+            echo json_encode(array("data" => null, "message" => "Invalid password"));
         }
     }else{
         // User does not exist
         http_response_code(404);
-        echo json_encode(array("message" => "User not found"));
+        echo json_encode(array("data" => null, "message" => "User not found"));
     }
 }else{
     // Incomplete data
     http_response_code(400);
-    echo json_encode(array("message" => "Incomplete data. Username and password are required."));
+    echo json_encode(array("data" => null, "message" => "Incomplete data. Username and password are required."));
 }
 
 $conn->close();
